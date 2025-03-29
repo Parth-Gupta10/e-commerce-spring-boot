@@ -1,5 +1,6 @@
 package com.ecommerce.web.controller;
 
+import com.ecommerce.web.config.AppConstants;
 import com.ecommerce.web.dto.request.CategoryDTO;
 import com.ecommerce.web.dto.response.CategoryResponse;
 import com.ecommerce.web.exception.APIException;
@@ -25,8 +26,8 @@ public class CategoryController {
 
     @GetMapping
     public ResponseEntity<CategoryResponse> getAllCategories(
-            @RequestParam(name = "page", defaultValue = "0") Integer pageNumber,
-            @RequestParam(name = "pageSize", defaultValue = "10") Integer pageSize) {
+            @RequestParam(name = "page", defaultValue = AppConstants.PAGE_NUMBER) Integer pageNumber,
+            @RequestParam(name = "pageSize", defaultValue = AppConstants.PAGE_SIZE) Integer pageSize) {
         return ResponseEntity.ok(categoryService.getAllCategories(pageNumber, pageSize));
     }
 
