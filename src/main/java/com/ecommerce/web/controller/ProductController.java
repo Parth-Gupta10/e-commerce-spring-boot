@@ -26,4 +26,16 @@ public class ProductController {
         ProductResponse productResponse = productService.getAllProducts();
         return ResponseEntity.ok().body(productResponse);
     }
+
+    @GetMapping("/search")
+    public ResponseEntity<ProductResponse> searchProductsByQuery(@RequestParam String query) {
+        ProductResponse productResponse = productService.searchProductsByQuery(query);
+        return ResponseEntity.ok().body(productResponse);
+    }
+
+    @PutMapping("/{productId}")
+    public ResponseEntity<ProductDTO> updateProduct(@PathVariable Long productId, @Valid @RequestBody ProductDTO product) {
+        ProductDTO updatedProduct = productService.updateProduct(productId, product);
+        return ResponseEntity.ok().body(updatedProduct);
+    }
 }

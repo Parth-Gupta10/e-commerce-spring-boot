@@ -2,11 +2,9 @@ package com.ecommerce.web.controller;
 
 import com.ecommerce.web.config.AppConstants;
 import com.ecommerce.web.dto.request.CategoryDTO;
-import com.ecommerce.web.dto.request.ProductDTO;
 import com.ecommerce.web.dto.response.CategoryResponse;
 import com.ecommerce.web.dto.response.ProductResponse;
 import com.ecommerce.web.exception.APIException;
-import com.ecommerce.web.model.Category;
 import com.ecommerce.web.service.CategoryService;
 import com.ecommerce.web.service.ProductService;
 import jakarta.validation.Valid;
@@ -42,17 +40,17 @@ public class CategoryController {
     @PostMapping
     public ResponseEntity<String> createCategory(@Valid @RequestBody CategoryDTO category) {
         try {
-            categoryService.createCategory(category);
-            return new ResponseEntity<>("Successfully added " + category.getCategoryName() + " to the categories", HttpStatus.CREATED);
+            CategoryDTO newCategory = categoryService.createCategory(category);
+            return new ResponseEntity<>("Successfully added " + newCategory.getCategoryName() + " to the categories", HttpStatus.CREATED);
         } catch (APIException e) {
             return new ResponseEntity<>(e.getMessage(), e.getHttpStatus());
         }
     }
 
     @PutMapping("/{categoryId}")
-    public ResponseEntity<Category> updateCategory(@PathVariable Long categoryId,
-                                                   @Valid @RequestBody CategoryDTO updatedCategory) {
-        Category updated = categoryService.updateCategory(categoryId, updatedCategory);
+    public ResponseEntity<CategoryDTO> updateCategory(@PathVariable Long categoryId,
+                                                      @Valid @RequestBody CategoryDTO updatedCategory) {
+        CategoryDTO updated = categoryService.updateCategory(categoryId, updatedCategory);
         return ResponseEntity.ok(updated);
     }
 

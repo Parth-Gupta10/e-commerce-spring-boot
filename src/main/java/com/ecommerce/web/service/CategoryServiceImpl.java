@@ -16,6 +16,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class CategoryServiceImpl implements CategoryService {
@@ -26,7 +27,7 @@ public class CategoryServiceImpl implements CategoryService {
 
     public CategoryResponse getAllCategories(Integer pageNumber, Integer pageSize, String sortingField, String sortingDir) {
         Pageable pageDetails;
-        if(sortingField != null) {
+        if (sortingField != null) {
             Sort sortDetails = Sort.by(Sort.Direction.fromString(sortingDir), sortingField);
             pageDetails = PageRequest.of(pageNumber, pageSize, sortDetails);
         } else {
@@ -43,17 +44,20 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     @Override
-    public void createCategory(CategoryDTO category) {
+    public CategoryDTO createCategory(CategoryDTO category) {
         Category categoryEntity = modelMapper.map(category, Category.class);
-        categoryRepository.findByCategoryName(categoryEntity.getCategoryName()).
-                ifPresentOrElse(
-                        (savedCategory) -> {
-                            throw new APIException("Category with name " + categoryEntity.getCategoryName() +
-                                    " already exists!!", HttpStatus.BAD_REQUEST);
-                        },
-                        () -> categoryRepository.save(categoryEntity)
-                );
+
+        Optional<Category> existingCategory = categoryRepository.findByCategoryName(categoryEntity.getCategoryName());
+
+        if (existingCategory.isPresent()) {
+            throw new APIException("Category with name " + categoryEntity.getCategoryName() +
+                    " already exists!!", HttpStatus.BAD_REQUEST);
+        }
+
+        Category savedCategory = categoryRepository.save(categoryEntity);
+        return modelMapper.map(savedCategory, CategoryDTO.class);
     }
+
 
     @Override
     public void deleteCategory(Long categoryId) {
@@ -67,8 +71,12 @@ public class CategoryServiceImpl implements CategoryService {
         categoryRepository.delete(categoryToDelete);
     }
 
-    public Category updateCategory(Long categoryId, CategoryDTO updatedCategory) {
-        if (categoryId == null || updatedCategory == null) {
+    public CategoryDTO updateCategory(Long categoryId, CategoryDTO updatedCategory) {
+        if (categoryId == null) {
+            return createCategory(updatedCategory);
+        }
+
+        if (updatedCategory == null) {
             throw new APIException("Category ID or updated data cannot be null", HttpStatus.BAD_REQUEST);
         }
 
@@ -84,6 +92,6 @@ public class CategoryServiceImpl implements CategoryService {
         categoryToUpdate.setCategoryName(updatedCategory.getCategoryName());
 
         categoryRepository.save(categoryToUpdate);
-        return categoryToUpdate;
+        return modelMapper.map(categoryToUpdate, CategoryDTO.class);
     }
 }
