@@ -2,10 +2,13 @@ package com.ecommerce.web.controller;
 
 import com.ecommerce.web.config.AppConstants;
 import com.ecommerce.web.dto.request.CategoryDTO;
+import com.ecommerce.web.dto.request.ProductDTO;
 import com.ecommerce.web.dto.response.CategoryResponse;
+import com.ecommerce.web.dto.response.ProductResponse;
 import com.ecommerce.web.exception.APIException;
 import com.ecommerce.web.model.Category;
 import com.ecommerce.web.service.CategoryService;
+import com.ecommerce.web.service.ProductService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -17,6 +20,9 @@ import org.springframework.web.bind.annotation.*;
 public class CategoryController {
     @Autowired
     private CategoryService categoryService;
+
+    @Autowired
+    private ProductService productService;
 
 //    To remove this constructor i.e. clean the code we can use Autowired annotation to
 //    inject dependency by field
@@ -54,5 +60,11 @@ public class CategoryController {
     public ResponseEntity<String> deleteCategory(@PathVariable Long categoryId) {
         categoryService.deleteCategory(categoryId);
         return ResponseEntity.ok("Successfully deleted category with ID: " + categoryId);
+    }
+
+    @GetMapping("/{categoryId}/products")
+    public ResponseEntity<ProductResponse> getProductsByCategoryId(@PathVariable Long categoryId) {
+        ProductResponse products = productService.getProductsByCategory(categoryId);
+        return ResponseEntity.ok(products);
     }
 }
