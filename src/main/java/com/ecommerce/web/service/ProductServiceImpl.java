@@ -15,6 +15,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 
 @Service
@@ -41,19 +42,24 @@ public class ProductServiceImpl implements ProductService {
                 }).toList();
     }
 
-
     @Override
-    public ProductDTO addProduct(ProductDTO productDTO) {
-        if (productDTO.getCategory() == null) {
-            throw new APIException("category_id cannot be null", HttpStatus.BAD_REQUEST);
+    public ProductDTO addProduct(ProductDTO newProductDTO) {
+        if (newProductDTO.getCategory() == null) {
+            throw new APIException("Category cannot be null", HttpStatus.BAD_REQUEST);
         }
 
-        // Fetch category
-        Category category = categoryRepository.findById(productDTO.getCategory().getCategoryId())
-                .orElseThrow(() -> new ResourceNotFoundException("category", "categoryId", productDTO.getCategory().getCategoryId()));
+        // Check if category exists -> if it does then return it else create a new category
+        Category category = categoryRepository
+                .findByCategoryName(newProductDTO.getCategory().getCategoryName())
+                .orElseGet(() -> {
+                    // Create a new category if not found
+                    Category newCategory = new Category();
+                    newCategory.setCategoryName(newProductDTO.getCategory().getCategoryName());
+                    return categoryRepository.save(newCategory);
+                });
 
         // Map DTO to Entity
-        Product product = modelMapper.map(productDTO, Product.class);
+        Product product = modelMapper.map(newProductDTO, Product.class);
         product.setCategory(category);
         product.setProductImageUrl("test.png");
 
@@ -125,5 +131,18 @@ public class ProductServiceImpl implements ProductService {
         savedProductDTO.setCategory(modelMapper.map(originalProduct.getCategory(), CategoryDTO.class));
 
         return savedProductDTO;
+    }
+
+    @Override
+    public ProductDTO deleteProduct(Long productId) {
+        if (productId == null) {
+            throw new APIException("product id cannot be null", HttpStatus.BAD_REQUEST);
+        }
+
+        Product productToDelete = productRepository.findById(productId).
+                orElseThrow(() -> new ResourceNotFoundException("product", "productId", productId));
+
+        productRepository.delete(productToDelete);
+        return modelMapper.map(productToDelete, ProductDTO.class);
     }
 }

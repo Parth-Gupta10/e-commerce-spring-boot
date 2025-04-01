@@ -6,6 +6,7 @@ import com.ecommerce.web.exception.APIException;
 import com.ecommerce.web.exception.ResourceNotFoundException;
 import com.ecommerce.web.model.Category;
 import com.ecommerce.web.repository.CategoryRepository;
+import com.ecommerce.web.repository.ProductRepository;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -24,6 +25,8 @@ public class CategoryServiceImpl implements CategoryService {
     private CategoryRepository categoryRepository;
     @Autowired
     private ModelMapper modelMapper;
+    @Autowired
+    private ProductRepository productRepository;
 
     public CategoryResponse getAllCategories(Integer pageNumber, Integer pageSize, String sortingField, String sortingDir) {
         Pageable pageDetails;
@@ -67,6 +70,11 @@ public class CategoryServiceImpl implements CategoryService {
 
         Category categoryToDelete = categoryRepository.findById(categoryId).
                 orElseThrow(() -> new ResourceNotFoundException("Category", "categoryId", categoryId));
+
+        // Check if there are associated products
+        if (productRepository.existsByCategoryCategoryId(categoryId)) {
+            throw new APIException("Cannot delete category as it contains products", HttpStatus.BAD_REQUEST);
+        }
 
         categoryRepository.delete(categoryToDelete);
     }

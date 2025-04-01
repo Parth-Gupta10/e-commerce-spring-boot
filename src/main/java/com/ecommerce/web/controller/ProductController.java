@@ -38,4 +38,10 @@ public class ProductController {
         ProductDTO updatedProduct = productService.updateProduct(productId, product);
         return ResponseEntity.ok().body(updatedProduct);
     }
+
+    @DeleteMapping("/{productId}")
+    public ResponseEntity<ProductDTO> deleteProduct(@PathVariable Long productId) {
+        ProductDTO deletedProduct = productService.deleteProduct(productId);
+        return ResponseEntity.ok().body(deletedProduct);
+    }
 }
