@@ -11,11 +11,14 @@ import com.ecommerce.web.repository.CategoryRepository;
 import com.ecommerce.web.repository.ProductRepository;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Optional;
 
 
 @Service
@@ -74,33 +77,64 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    public ProductResponse getAllProducts() {
-        List<Product> products = productRepository.findAll();
+    public ProductResponse getAllProducts(Integer pageNumber, Integer pageSize, String sortingField, String sortingDirection) {
+        Pageable pageDetails;
+        if (sortingField != null) {
+            Sort sortDetails = Sort.by(Sort.Direction.fromString(sortingDirection), sortingField);
+            pageDetails = PageRequest.of(pageNumber, pageSize, sortDetails);
+        } else {
+            pageDetails = PageRequest.of(pageNumber, pageSize);
+        }
+        Page<Product> productsPage = productRepository.findAll(pageDetails);
+        List<Product> products = productsPage.getContent();
 
         List<ProductDTO> productDTOS = convertProductsToProductsDTOS(products);
 
-        return new ProductResponse(productDTOS);
+        return new ProductResponse(productDTOS, productsPage.getNumber(), productsPage.getSize(),
+                productsPage.getNumberOfElements(), productsPage.getTotalPages(), productsPage.isLast());
     }
 
     @Override
-    public ProductResponse getProductsByCategory(Long categoryId) {
+    public ProductResponse getProductsByCategory(Long categoryId, Integer pageNumber, Integer pageSize,
+                                                 String sortingField, String sortingDirection) {
         // Fetch category
         Category category = categoryRepository.findById(categoryId)
                 .orElseThrow(() -> new ResourceNotFoundException("category", "categoryId", categoryId));
-        List<Product> products = productRepository.findByCategoryOrderByProductPriceAsc(category);
+
+        Pageable pageDetails;
+        if (sortingField != null) {
+            Sort sortDetails = Sort.by(Sort.Direction.fromString(sortingDirection), sortingField);
+            pageDetails = PageRequest.of(pageNumber, pageSize, sortDetails);
+        } else {
+            pageDetails = PageRequest.of(pageNumber, pageSize);
+        }
+        Page<Product> productsPage = productRepository.findByCategory(category, pageDetails);
+        List<Product> products = productsPage.getContent();
+
 
         List<ProductDTO> productDTOS = convertProductsToProductsDTOS(products);
 
-        return new ProductResponse(productDTOS);
+        return new ProductResponse(productDTOS, productsPage.getNumber(), productsPage.getSize(),
+                productsPage.getNumberOfElements(), productsPage.getTotalPages(), productsPage.isLast());
     }
 
     @Override
-    public ProductResponse searchProductsByQuery(String query) {
-        List<Product> products = productRepository.findByProductNameContainingIgnoreCase(query);
+    public ProductResponse searchProductsByQuery(String query, Integer pageNumber, Integer pageSize,
+                                                 String sortingField, String sortingDirection) {
+        Pageable pageDetails;
+        if (sortingField != null) {
+            Sort sortDetails = Sort.by(Sort.Direction.fromString(sortingDirection), sortingField);
+            pageDetails = PageRequest.of(pageNumber, pageSize, sortDetails);
+        } else {
+            pageDetails = PageRequest.of(pageNumber, pageSize);
+        }
+        Page<Product> productsPage = productRepository.findByProductNameContainingIgnoreCase(query, pageDetails);
+        List<Product> products = productsPage.getContent();
 
         List<ProductDTO> productDTOS = convertProductsToProductsDTOS(products);
 
-        return new ProductResponse(productDTOS);
+        return new ProductResponse(productDTOS, productsPage.getNumber(), productsPage.getSize(),
+                productsPage.getNumberOfElements(), productsPage.getTotalPages(), productsPage.isLast());
     }
 
     @Override

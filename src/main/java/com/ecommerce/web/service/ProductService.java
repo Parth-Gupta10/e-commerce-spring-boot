@@ -6,11 +6,11 @@ import com.ecommerce.web.dto.response.ProductResponse;
 public interface ProductService {
     ProductDTO addProduct(ProductDTO product);
 
-    ProductResponse getAllProducts();
+    ProductResponse getAllProducts(Integer pageNumber, Integer pageSize, String sortingField, String sortingDirection);
 
-    ProductResponse getProductsByCategory(Long categoryId);
+    ProductResponse getProductsByCategory(Long categoryId, Integer pageNumber, Integer pageSize, String sortingField, String sortingDirection);
 
-    ProductResponse searchProductsByQuery(String query);
+    ProductResponse searchProductsByQuery(String query, Integer pageNumber, Integer pageSize, String sortingField, String sortingDirection);
 
     ProductDTO updateProduct(Long productId, ProductDTO product);
 
