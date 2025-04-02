@@ -7,12 +7,11 @@ import com.ecommerce.web.exception.ResourceNotFoundException;
 import com.ecommerce.web.model.Category;
 import com.ecommerce.web.repository.CategoryRepository;
 import com.ecommerce.web.repository.ProductRepository;
+import com.ecommerce.web.util.PaginationUtil;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -29,13 +28,7 @@ public class CategoryServiceImpl implements CategoryService {
     private ProductRepository productRepository;
 
     public CategoryResponse getAllCategories(Integer pageNumber, Integer pageSize, String sortingField, String sortingDir) {
-        Pageable pageDetails;
-        if (sortingField != null) {
-            Sort sortDetails = Sort.by(Sort.Direction.fromString(sortingDir), sortingField);
-            pageDetails = PageRequest.of(pageNumber, pageSize, sortDetails);
-        } else {
-            pageDetails = PageRequest.of(pageNumber, pageSize);
-        }
+        Pageable pageDetails = PaginationUtil.createPageable(pageNumber, pageSize, sortingField, sortingDir);
 
         Page<Category> categoryPage = categoryRepository.findAll(pageDetails);
         List<Category> categories = categoryPage.getContent();
@@ -48,12 +41,16 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     public CategoryDTO createCategory(CategoryDTO category) {
+        // Normalize category name
+        String normalizedCategoryName = category.getCategoryName().trim().toLowerCase();
+        category.setCategoryName(normalizedCategoryName);
+
         Category categoryEntity = modelMapper.map(category, Category.class);
 
-        Optional<Category> existingCategory = categoryRepository.findByCategoryName(categoryEntity.getCategoryName());
+        Optional<Category> existingCategory = categoryRepository.findByCategoryName(normalizedCategoryName);
 
         if (existingCategory.isPresent()) {
-            throw new APIException("Category with name " + categoryEntity.getCategoryName() +
+            throw new APIException("Category with name " + normalizedCategoryName +
                     " already exists!!", HttpStatus.BAD_REQUEST);
         }
 

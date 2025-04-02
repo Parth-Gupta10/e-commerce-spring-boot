@@ -9,12 +9,11 @@ import com.ecommerce.web.model.Category;
 import com.ecommerce.web.model.Product;
 import com.ecommerce.web.repository.CategoryRepository;
 import com.ecommerce.web.repository.ProductRepository;
+import com.ecommerce.web.util.PaginationUtil;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -51,13 +50,16 @@ public class ProductServiceImpl implements ProductService {
             throw new APIException("Category cannot be null", HttpStatus.BAD_REQUEST);
         }
 
+        // Normalize category name
+        String normalizedCategoryName = newProductDTO.getCategory().getCategoryName().trim().toLowerCase();
+
         // Check if category exists -> if it does then return it else create a new category
         Category category = categoryRepository
-                .findByCategoryName(newProductDTO.getCategory().getCategoryName())
+                .findByCategoryName(normalizedCategoryName)
                 .orElseGet(() -> {
                     // Create a new category if not found
                     Category newCategory = new Category();
-                    newCategory.setCategoryName(newProductDTO.getCategory().getCategoryName());
+                    newCategory.setCategoryName(normalizedCategoryName);
                     return categoryRepository.save(newCategory);
                 });
 
@@ -78,13 +80,7 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public ProductResponse getAllProducts(Integer pageNumber, Integer pageSize, String sortingField, String sortingDirection) {
-        Pageable pageDetails;
-        if (sortingField != null) {
-            Sort sortDetails = Sort.by(Sort.Direction.fromString(sortingDirection), sortingField);
-            pageDetails = PageRequest.of(pageNumber, pageSize, sortDetails);
-        } else {
-            pageDetails = PageRequest.of(pageNumber, pageSize);
-        }
+        Pageable pageDetails = PaginationUtil.createPageable(pageNumber, pageSize, sortingField, sortingDirection);
         Page<Product> productsPage = productRepository.findAll(pageDetails);
         List<Product> products = productsPage.getContent();
 
@@ -101,16 +97,9 @@ public class ProductServiceImpl implements ProductService {
         Category category = categoryRepository.findById(categoryId)
                 .orElseThrow(() -> new ResourceNotFoundException("category", "categoryId", categoryId));
 
-        Pageable pageDetails;
-        if (sortingField != null) {
-            Sort sortDetails = Sort.by(Sort.Direction.fromString(sortingDirection), sortingField);
-            pageDetails = PageRequest.of(pageNumber, pageSize, sortDetails);
-        } else {
-            pageDetails = PageRequest.of(pageNumber, pageSize);
-        }
+        Pageable pageDetails = PaginationUtil.createPageable(pageNumber, pageSize, sortingField, sortingDirection);
         Page<Product> productsPage = productRepository.findByCategory(category, pageDetails);
         List<Product> products = productsPage.getContent();
-
 
         List<ProductDTO> productDTOS = convertProductsToProductsDTOS(products);
 
@@ -121,13 +110,7 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public ProductResponse searchProductsByQuery(String query, Integer pageNumber, Integer pageSize,
                                                  String sortingField, String sortingDirection) {
-        Pageable pageDetails;
-        if (sortingField != null) {
-            Sort sortDetails = Sort.by(Sort.Direction.fromString(sortingDirection), sortingField);
-            pageDetails = PageRequest.of(pageNumber, pageSize, sortDetails);
-        } else {
-            pageDetails = PageRequest.of(pageNumber, pageSize);
-        }
+        Pageable pageDetails = PaginationUtil.createPageable(pageNumber, pageSize, sortingField, sortingDirection);
         Page<Product> productsPage = productRepository.findByProductNameContainingIgnoreCase(query, pageDetails);
         List<Product> products = productsPage.getContent();
 

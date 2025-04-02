@@ -38,13 +38,9 @@ public class CategoryController {
     }
 
     @PostMapping
-    public ResponseEntity<String> createCategory(@Valid @RequestBody CategoryDTO category) {
-        try {
-            CategoryDTO newCategory = categoryService.createCategory(category);
-            return new ResponseEntity<>("Successfully added " + newCategory.getCategoryName() + " to the categories", HttpStatus.CREATED);
-        } catch (APIException e) {
-            return new ResponseEntity<>(e.getMessage(), e.getHttpStatus());
-        }
+    public ResponseEntity<CategoryDTO> createCategory(@Valid @RequestBody CategoryDTO category) {
+        CategoryDTO newCategory = categoryService.createCategory(category);
+        return new ResponseEntity<>(newCategory, HttpStatus.CREATED);
     }
 
     @PutMapping("/{categoryId}")
