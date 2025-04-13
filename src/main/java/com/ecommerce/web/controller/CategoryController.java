@@ -4,7 +4,6 @@ import com.ecommerce.web.config.AppConstants;
 import com.ecommerce.web.dto.request.CategoryDTO;
 import com.ecommerce.web.dto.response.CategoryResponse;
 import com.ecommerce.web.dto.response.ProductResponse;
-import com.ecommerce.web.exception.APIException;
 import com.ecommerce.web.service.CategoryService;
 import com.ecommerce.web.service.ProductService;
 import jakarta.validation.Valid;
