@@ -1,7 +1,7 @@
 package com.ecommerce.web.model;
 
 public enum UserRole {
-    ADMIN,
-    SELLER,
-    CUSTOMER
+    ROLE_ADMIN,
+    ROLE_SELLER,
+    ROLE_CUSTOMER
 }
