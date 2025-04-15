@@ -28,7 +28,7 @@ public class Role {
     private Set<User> users = new HashSet<>();
 
     public Role(UserRole userRole) {
-
+        this.roleName = userRole;
     }
 
     @Override
