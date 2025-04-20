@@ -23,39 +23,35 @@ import java.util.Date;
 @Component
 public class JwtUtils {
     private static final Logger logger = LoggerFactory.getLogger(JwtUtils.class);
+    private static final String COOKIE_PATH = "/api";
+    private static final int COOKIE_MAX_AGE = 24 * 60 * 60;
 
     @Value("${spring.app.jwtSecret}")
     private String jwtSecret;
-
     @Value("${spring.app.jwtExpirationMs}")
     private int jwtExpirationMs;
-
     @Value("${spring.ecom.app.jwtCookieName}")
     private String jwtCookie;
 
     public String getJwtFromCookies(HttpServletRequest request) {
         Cookie cookie = WebUtils.getCookie(request, jwtCookie);
-        if (cookie != null) {
-            return cookie.getValue();
-        } else {
-            return null;
-        }
+        return (cookie != null) ? cookie.getValue() : null;
     }
 
     public ResponseCookie generateJwtCookie(UserDetailsImpl userPrincipal) {
         String jwt = generateTokenFromUsername(userPrincipal.getUsername());
         return ResponseCookie.from(jwtCookie, jwt)
-                .path("/api")
-                .maxAge(24 * 60 * 60)
-                .httpOnly(false)
+                .path(COOKIE_PATH)
+                .maxAge(COOKIE_MAX_AGE)
+                .httpOnly(true)
                 .build();
     }
 
     public ResponseCookie getCleanJwtCookie() {
-        ResponseCookie cookie = ResponseCookie.from(jwtCookie, null)
-                .path("/api")
+        return ResponseCookie.from(jwtCookie, null)
+                .path(COOKIE_PATH)
+                .maxAge(0)
                 .build();
-        return cookie;
     }
 
     public String generateTokenFromUsername(String username) {
@@ -80,7 +76,6 @@ public class JwtUtils {
 
     public boolean validateJwtToken(String authToken) {
         try {
-            System.out.println("Validate");
             Jwts.parser().verifyWith((SecretKey) key()).build().parseSignedClaims(authToken);
             return true;
         } catch (MalformedJwtException e) {
