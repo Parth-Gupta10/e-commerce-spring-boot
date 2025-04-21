@@ -57,6 +57,12 @@ public class User {
             orphanRemoval = true)
     private Set<Address> addresses = new HashSet<>();
 
+    @ToString.Exclude
+    @OneToOne(mappedBy = "user",
+            cascade = {CascadeType.PERSIST, CascadeType.MERGE},
+            orphanRemoval = true)
+    private Cart cart;
+
     public User(String username, String password, String email) {
         this.username = username;
         this.password = password;
