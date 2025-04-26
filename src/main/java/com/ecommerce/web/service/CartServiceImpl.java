@@ -17,6 +17,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Service
@@ -35,6 +36,10 @@ public class CartServiceImpl implements CartService {
 
     @Autowired
     private ModelMapper modelMapper;
+
+    private Double calculateDiscountedPrice(Product product) {
+        return product.getProductPrice() - (product.getProductDiscount() * 0.01 * product.getProductPrice());
+    }
 
     @Override
     public CartDTO addProductToCart(Long productId, Integer quantity) {
@@ -64,7 +69,7 @@ public class CartServiceImpl implements CartService {
         newCartItem.setQuantity(quantity);
         newCartItem.setCart(cart);
         newCartItem.setDiscount(product.getProductDiscount());
-        newCartItem.setProductPrice(product.getProductPrice() - (product.getProductPrice() * product.getProductDiscount() / 100));
+        newCartItem.setProductPrice(calculateDiscountedPrice(product));
 
         // save cart item
         cartItemRepository.save(newCartItem);
@@ -82,12 +87,48 @@ public class CartServiceImpl implements CartService {
         Stream<ProductDTO> productStream = cartItems.stream().map(item -> {
             ProductDTO productDTO = modelMapper.map(item.getProduct(), ProductDTO.class);
             productDTO.setProductQuantity(item.getQuantity());
+            productDTO.setProductDiscountedPrice(calculateDiscountedPrice(item.getProduct()));
             return productDTO;
         });
 
         cartDTO.setProducts(productStream.toList());
 
         return cartDTO;
+    }
+
+    @Override
+    public List<CartDTO> getAllCarts() {
+        List<Cart> carts = cartRepository.findAll();
+
+        return carts.stream().map(cart -> {
+            CartDTO cartDTO = modelMapper.map(cart, CartDTO.class);
+            List<ProductDTO> products = cart.getCartItems().stream().
+                    map(item -> {
+                        item.getProduct().setProductQuantity(item.getQuantity());
+                        ProductDTO productDTO = modelMapper.map(item.getProduct(), ProductDTO.class);
+                        productDTO.setProductDiscountedPrice(calculateDiscountedPrice(item.getProduct()));
+                        return productDTO;
+                    }).
+                    collect(Collectors.toList());
+
+            cartDTO.setProducts(products);
+
+            return cartDTO;
+        }).collect(Collectors.toList());
+    }
+
+    @Override
+    public CartDTO getUserCart() {
+        String userEmail = authUtil.loggedInEmail();
+        Cart cart = cartRepository.findCartByEmail(userEmail);
+
+        if (cart == null) {
+            throw new APIException("Cart not found for user with email: " + userEmail, HttpStatus.NOT_FOUND);
+        }
+
+        cart.getCartItems().forEach(item -> item.getProduct().setProductQuantity(item.getQuantity()));
+
+        return modelMapper.map(cart, CartDTO.class);
     }
 
     private Cart findOrCreateCart() {
