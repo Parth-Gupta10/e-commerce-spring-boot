@@ -1,5 +1,6 @@
 package com.ecommerce.web.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -41,9 +42,11 @@ public class Product {
     private Category category;
 
     @ManyToOne
+    @JsonIgnore
     @JoinColumn(name = "seller_id")
     private User user;
 
+    @JsonIgnore
     @OneToMany(mappedBy = "product",
             fetch = FetchType.EAGER,
             cascade = {CascadeType.PERSIST, CascadeType.MERGE})

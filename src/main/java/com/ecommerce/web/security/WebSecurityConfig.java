@@ -8,6 +8,7 @@ import com.ecommerce.web.repository.UserRepository;
 import com.ecommerce.web.security.jwt.AuthEntryPointJwt;
 import com.ecommerce.web.security.jwt.AuthTokenFilter;
 import com.ecommerce.web.security.service.UserDetailsServiceImpl;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
@@ -24,7 +25,6 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Set;
 

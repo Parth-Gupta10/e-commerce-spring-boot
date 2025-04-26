@@ -10,4 +10,8 @@ public interface CartService {
     List<CartDTO> getAllCarts();
 
     CartDTO getUserCart();
+
+    CartDTO updateProductQuantityInCart(Long productId, int quantity);
+
+    CartDTO removeProductFromCart(Long cartId, Long productId);
 }

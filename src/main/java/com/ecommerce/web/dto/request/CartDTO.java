@@ -1,5 +1,6 @@
 package com.ecommerce.web.dto.request;
 
+import com.ecommerce.web.model.CartItem;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -13,5 +14,5 @@ import java.util.List;
 public class CartDTO {
     private Long cartId;
     private Double totalPrice;
-    private List<ProductDTO> products = new ArrayList<>();
+    private List<CartItem> cartItems = new ArrayList<>();
 }
