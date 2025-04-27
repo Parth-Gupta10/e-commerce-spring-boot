@@ -117,14 +117,17 @@ public class CartServiceImpl implements CartService {
 
         CartItem cartItem = cartItemRepository.findCartItemByProductIdAndCartId(productId, cart.getCartId());
         if (cartItem == null) {
-            return addProductToCart(productId, quantity);
-        }
-
-        if (quantity == -1 && cartItem.getQuantity() == 0) {
-            throw new APIException("Cart cannot have negative product quantity", HttpStatus.BAD_REQUEST);
+            if (quantity > 0)
+                return addProductToCart(productId, quantity);
+            else throw new APIException("Cart cannot have negative product quantity", HttpStatus.BAD_REQUEST);
         }
 
         int newQuantity = cartItem.getQuantity() + quantity;
+
+        if (quantity == -1 && newQuantity < 0) {
+            throw new APIException("Cart cannot have negative product quantity", HttpStatus.BAD_REQUEST);
+        }
+
         if (product.getProductQuantity() < newQuantity) {
             throw new APIException("No more " + product.getProductName() + " left in stock", HttpStatus.BAD_REQUEST);
         }
