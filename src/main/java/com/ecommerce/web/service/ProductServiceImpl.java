@@ -5,11 +5,18 @@ import com.ecommerce.web.dto.request.ProductDTO;
 import com.ecommerce.web.dto.response.ProductResponse;
 import com.ecommerce.web.exception.APIException;
 import com.ecommerce.web.exception.ResourceNotFoundException;
+import com.ecommerce.web.model.Cart;
+import com.ecommerce.web.model.CartItem;
 import com.ecommerce.web.model.Category;
 import com.ecommerce.web.model.Product;
+import com.ecommerce.web.repository.CartItemRepository;
+import com.ecommerce.web.repository.CartRepository;
 import com.ecommerce.web.repository.CategoryRepository;
 import com.ecommerce.web.repository.ProductRepository;
 import com.ecommerce.web.util.PaginationUtil;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import jakarta.transaction.Transactional;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -17,7 +24,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
+import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 
 
 @Service
@@ -30,6 +39,13 @@ public class ProductServiceImpl implements ProductService {
     private ModelMapper modelMapper;
     @Autowired
     private CategoryService categoryService;
+    @Autowired
+    private CartRepository cartRepository;
+
+    @PersistenceContext
+    private EntityManager entityManager;
+    @Autowired
+    private CartItemRepository cartItemRepository;
 
     private Double calculateDiscountedPrice(Product product) {
         return product.getProductPrice() - (product.getProductDiscount() * 0.01 * product.getProductPrice());
@@ -42,6 +58,36 @@ public class ProductServiceImpl implements ProductService {
                     productDTO.setProductDiscountedPrice(calculateDiscountedPrice(product));
                     return productDTO;
                 }).toList();
+    }
+
+
+    private void updateCartsToReflectProductChanges(Long productId, Double originalProductDiscountedPrice,
+                                                    Double newProductDiscountedPrice, Double newProductDiscount) {
+        List<Cart> carts = cartRepository.findCartsByProductId(productId);
+        for (Cart cart : carts) {
+            Iterator<CartItem> iterator = cart.getCartItems().iterator();
+            while (iterator.hasNext()) {
+                CartItem cartItem = iterator.next();
+                if (Objects.equals(cartItem.getProduct().getProductId(), productId)) {
+                    Double currentCartTotalPrice = cart.getTotalPrice();
+
+                    if (newProductDiscountedPrice == 0.0) {
+                        // Product is being deleted, remove the cart item
+                        cart.setTotalPrice(currentCartTotalPrice - originalProductDiscountedPrice * cartItem.getQuantity());
+                        iterator.remove(); // Use iterator to remove the item
+                    } else {
+                        // Product price is being updated, adjust the total price
+                        cart.setTotalPrice(currentCartTotalPrice - originalProductDiscountedPrice * cartItem.getQuantity() +
+                                newProductDiscountedPrice * cartItem.getQuantity());
+                    }
+                }
+
+                cartItem.setProductPrice(newProductDiscountedPrice);
+                cartItem.setDiscount(newProductDiscount);
+                cartItemRepository.save(cartItem);
+            }
+            cartRepository.save(cart);
+        }
     }
 
     @Override
@@ -120,6 +166,7 @@ public class ProductServiceImpl implements ProductService {
                 productsPage.getNumberOfElements(), productsPage.getTotalPages(), productsPage.isLast());
     }
 
+    @Transactional
     @Override
     public ProductDTO updateProduct(Long productId, ProductDTO updatedProductDTO) {
         if (productId == null || updatedProductDTO == null) {
@@ -128,6 +175,8 @@ public class ProductServiceImpl implements ProductService {
 
         Product originalProduct = productRepository.findById(productId).
                 orElseThrow(() -> new ResourceNotFoundException("product", "productId", productId));
+
+        Double originalProductDiscountedPrice = calculateDiscountedPrice(originalProduct);
 
         originalProduct.setProductName(updatedProductDTO.getProductName());
         originalProduct.setProductDescription(updatedProductDTO.getProductDescription());
@@ -147,9 +196,14 @@ public class ProductServiceImpl implements ProductService {
         savedProductDTO.setProductDiscountedPrice(calculateDiscountedPrice(originalProduct));
         savedProductDTO.setCategory(modelMapper.map(originalProduct.getCategory(), CategoryDTO.class));
 
+        //update carts tp reflect the new product changes i.e. price changes
+        updateCartsToReflectProductChanges(productId, originalProductDiscountedPrice,
+                savedProductDTO.getProductDiscountedPrice(), originalProduct.getProductDiscount());
+
         return savedProductDTO;
     }
 
+    @Transactional
     @Override
     public ProductDTO deleteProduct(Long productId) {
         if (productId == null) {
@@ -159,7 +213,17 @@ public class ProductServiceImpl implements ProductService {
         Product productToDelete = productRepository.findById(productId).
                 orElseThrow(() -> new ResourceNotFoundException("product", "productId", productId));
 
+        Double originalProductDiscountedPrice = calculateDiscountedPrice(productToDelete);
+
+        // Detach the product entity
+        entityManager.detach(productToDelete);
+
+        // Update carts before deleting the product
+        updateCartsToReflectProductChanges(productId, originalProductDiscountedPrice, 0.0, 0.0);
+
+        // Now delete the product
         productRepository.delete(productToDelete);
+
         return modelMapper.map(productToDelete, ProductDTO.class);
     }
 }

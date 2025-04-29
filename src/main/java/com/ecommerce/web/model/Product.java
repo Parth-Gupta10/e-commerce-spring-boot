@@ -49,6 +49,7 @@ public class Product {
     @JsonIgnore
     @OneToMany(mappedBy = "product",
             fetch = FetchType.EAGER,
-            cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REMOVE})
+            cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REMOVE},
+            orphanRemoval = true)
     private List<CartItem> cartItems = new ArrayList<>();
 }
