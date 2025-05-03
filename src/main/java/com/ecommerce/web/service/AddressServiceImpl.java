@@ -75,6 +75,45 @@ public class AddressServiceImpl implements AddressService {
                 collect(Collectors.toList());
     }
 
+    @Override
+    public AddressDTO updateAddress(Long addressId, AddressDTO addressDTO) {
+        if(addressId == null || addressDTO == null) {
+            throw new APIException("Address data is missing", HttpStatus.BAD_REQUEST);
+        }
+
+        Address addressToUpdate = addressRepository.findById(addressId).
+                orElseThrow(() -> new ResourceNotFoundException("address", "addressId", addressId));
+
+        addressToUpdate.setCity(addressDTO.getCity());
+        addressToUpdate.setCountry(addressDTO.getCountry());
+        addressToUpdate.setState(addressDTO.getState());
+        addressToUpdate.setStreet(addressDTO.getStreet());
+        addressToUpdate.setZip(addressDTO.getZip());
+
+        Address updatedAddress = addressRepository.save(addressToUpdate);
+
+        User currentUser = addressToUpdate.getUser();
+        currentUser.getAddresses().removeIf(address -> address.getAddressId().equals(addressId));
+        currentUser.getAddresses().add(updatedAddress);
+
+        return modelMapper.map(updatedAddress, AddressDTO.class);
+    }
+
+    @Override
+    public void deleteAddress(Long addressId) {
+        if (addressId == null) {
+            throw new APIException("Address ID is missing", HttpStatus.BAD_REQUEST);
+        }
+
+        Address addressFromDB = addressRepository.findById(addressId).
+                orElseThrow(() -> new ResourceNotFoundException("address", "addressId", addressId));
+
+        addressRepository.deleteById(addressId);
+        User currentUser = addressFromDB.getUser();
+        currentUser.getAddresses().removeIf(address -> address.getAddressId().equals(addressId));
+        userRepository.save(currentUser);
+    }
+
     private User getCurrentLoggedInUser() {
         User currentUser;
         try {
