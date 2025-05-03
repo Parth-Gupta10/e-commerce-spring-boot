@@ -6,10 +6,10 @@ import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/address")
@@ -19,6 +19,18 @@ public class AddressController {
 
     @PostMapping()
     public ResponseEntity<AddressDTO> creteAddress(@Valid @RequestBody AddressDTO addressDTO) {
-        return  new ResponseEntity<>(addressService.createAddress(addressDTO), HttpStatus.CREATED);
+        return new ResponseEntity<>(addressService.createAddress(addressDTO), HttpStatus.CREATED);
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping()
+    public ResponseEntity<List<AddressDTO>> getAllAddresses() {
+        return new ResponseEntity<>(addressService.getAllAddresses(), HttpStatus.OK);
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/{addressId}")
+    public ResponseEntity<AddressDTO> getAddressById(@PathVariable Long addressId) {
+        return new ResponseEntity<>(addressService.getAddressById(addressId), HttpStatus.OK);
     }
 }
