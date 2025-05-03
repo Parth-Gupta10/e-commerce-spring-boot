@@ -55,6 +55,8 @@ public class User {
             fetch = FetchType.EAGER,
             cascade = {CascadeType.PERSIST, CascadeType.MERGE},
             orphanRemoval = true)
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
     private Set<Address> addresses = new HashSet<>();
 
     @ToString.Exclude
