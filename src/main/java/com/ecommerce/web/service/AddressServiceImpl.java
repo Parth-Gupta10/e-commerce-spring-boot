@@ -34,12 +34,7 @@ public class AddressServiceImpl implements AddressService {
             throw new APIException("Address data is missing", HttpStatus.BAD_REQUEST);
         }
 
-        User currentUser;
-        try {
-            currentUser = authUtil.loggedInUser();
-        } catch (UsernameNotFoundException e) {
-            throw new APIException("User not logged in", HttpStatus.BAD_REQUEST);
-        }
+        User currentUser = getCurrentLoggedInUser();
 
         Address address = modelMapper.map(addressDTO, Address.class);
         address.setUser(currentUser);
@@ -70,5 +65,23 @@ public class AddressServiceImpl implements AddressService {
                 orElseThrow(() -> new ResourceNotFoundException("address", "addressId", addressId));
 
         return modelMapper.map(address, AddressDTO.class);
+    }
+
+    @Override
+    public List<AddressDTO> getUserAddresses() {
+        User currentUser = getCurrentLoggedInUser();
+        return currentUser.getAddresses().stream().
+                map(address -> modelMapper.map(address, AddressDTO.class)).
+                collect(Collectors.toList());
+    }
+
+    private User getCurrentLoggedInUser() {
+        User currentUser;
+        try {
+            currentUser = authUtil.loggedInUser();
+        } catch (UsernameNotFoundException e) {
+            throw new APIException("User not logged in", HttpStatus.BAD_REQUEST);
+        }
+        return currentUser;
     }
 }
