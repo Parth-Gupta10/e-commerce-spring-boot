@@ -31,4 +31,11 @@ public class Payment {
 
     @Column(name = "payment_gateway_id")
     private String paymentGatewayId;
+
+    public Payment(String paymentMethod, String paymentStatus, String paymentGatewayResponse, String paymentGatewayId) {
+        this.paymentMethod = paymentMethod;
+        this.paymentStatus = paymentStatus;
+        this.paymentGatewayResponse = paymentGatewayResponse;
+        this.paymentGatewayId = paymentGatewayId;
+    }
 }

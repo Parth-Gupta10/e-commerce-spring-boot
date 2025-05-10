@@ -182,6 +182,7 @@ public class ProductServiceImpl implements ProductService {
         originalProduct.setProductDescription(updatedProductDTO.getProductDescription());
         originalProduct.setProductPrice(updatedProductDTO.getProductPrice());
         originalProduct.setProductDiscount(updatedProductDTO.getProductDiscount());
+        originalProduct.setProductQuantity(updatedProductDTO.getProductQuantity());
 
         // Update category if category is provided
         if (updatedProductDTO.getCategory() != null) {
